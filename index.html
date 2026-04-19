@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carnet de Voyage — Paris</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e14;
+    --surface: #16161f;
+    --card: #1e1e2e;
+    --border: #2a2a3d;
+    --accent1: #ff6b6b;
+    --accent2: #ffd93d;
+    --accent3: #6bcb77;
+    --accent4: #4d96ff;
+    --text: #f0eee8;
+    --muted: #8886a0;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── PASSWORD SCREEN ── */
+  #lock-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+  }
+
+  .lock-inner {
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(24px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .lock-emoji { font-size: 48px; margin-bottom: 20px; display: block; }
+
+  .lock-title {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .lock-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    letter-spacing: 0.05em;
+  }
+
+  .lock-input {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 13px 20px;
+    border-radius: 12px;
+    width: 280px;
+    outline: none;
+    letter-spacing: 0.1em;
+    text-align: center;
+    transition: border-color 0.2s;
+    display: block;
+    margin: 0 auto 14px;
+  }
+
+  .lock-input:focus { border-color: var(--accent4); }
+  .lock-input.error { border-color: var(--accent1); animation: shake 0.3s ease; }
+
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)}
+  }
+
+  .lock-btn {
+    background: var(--accent4);
+    color: #fff;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 13px 36px;
+    border-radius: 12px;
+    cursor: pointer;
+    width: 280px;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.03em;
+  }
+
+  .lock-btn:hover { opacity: 0.88; }
+  .lock-btn:active { transform: scale(0.98); }
+
+  .lock-hint { margin-top: 16px; font-size: 11px; color: var(--muted); }
+  .lock-error { font-size: 12px; color: var(--accent1); height: 18px; margin-bottom: 8px; }
+
+  /* ── MAIN APP ── */
+  #app { display: none; height: 100vh; flex-direction: column; }
+
+  /* ── HEADER ── */
+  .header {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 1000;
+    background: rgba(14,14,20,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .header-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .header-title span { color: var(--accent1); }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+
+  .day-badge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .day-badge:hover { border-color: var(--accent4); color: var(--accent4); }
+  .day-badge.active { background: var(--accent4); border-color: var(--accent4); color: #fff; }
+
+  /* ── MAP ── */
+  #map { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 1; }
+  .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.7); }
+  .leaflet-container { background: #1a1a28; }
+
+  .custom-marker {
+    width: 36px; height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2.5px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+
+  .custom-marker:hover { transform: rotate(-45deg) scale(1.15); box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
+  .custom-marker .marker-icon { transform: rotate(45deg); font-size: 14px; line-height: 1; }
+
+  /* ── SIDE PANEL ── */
+  #panel {
+    position: fixed;
+    top: 60px; right: 0; bottom: 0;
+    width: 420px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 500;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  #panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .panel-day { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; font-weight: 500; }
+  .panel-title { font-family: var(--font-display); font-size: 22px; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
+  .panel-subtitle { font-size: 12px; color: var(--muted); }
+
+  .panel-close {
+    position: absolute; top: 18px; right: 18px;
+    width: 32px; height: 32px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .panel-close:hover { color: var(--text); border-color: var(--muted); }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .panel-text { font-size: 13.5px; line-height: 1.75; color: #c8c6da; margin-bottom: 20px; }
+  .panel-text p { margin-bottom: 10px; }
+
+  .panel-quote {
+    border-left: 3px solid;
+    padding: 10px 14px;
+    margin: 14px 0 20px;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--card);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .photos-header { display: flex; align-items: center; margin-bottom: 12px; }
+  .photos-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+
+  .photos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+  .photo-item {
+    position: relative;
+    aspect-ratio: 4/3;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+  .photo-item:hover img { transform: scale(1.05); }
+
+  /* ── LIGHTBOX ── */
+  #lightbox {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 9000;
+    align-items: center; justify-content: center;
+    cursor: zoom-out;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
+
+  #lightbox-close {
+    position: absolute; top: 20px; right: 20px;
+    background: rgba(255,255,255,0.1);
+    border: none; color: #fff; font-size: 24px;
+    width: 44px; height: 44px;
+    border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── LEGEND ── */
+  .map-legend {
+    position: fixed; bottom: 24px; left: 24px;
+    background: rgba(22,22,31,0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    z-index: 400;
+    font-size: 11px;
+  }
+
+  .legend-title { color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
+
+  .legend-item {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text); margin-bottom: 6px;
+    cursor: pointer; padding: 2px 4px;
+    border-radius: 4px; transition: background 0.15s;
+  }
+  .legend-item:hover { background: var(--card); }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .count-badge {
+    position: fixed; top: 76px; left: 16px;
+    background: rgba(22,22,31,0.88);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11px; color: var(--muted);
+    z-index: 400; backdrop-filter: blur(8px);
+  }
+  .count-badge strong { color: var(--text); }
+
+  @media (max-width: 600px) {
+    #panel { width: 100%; }
+    .map-legend { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-inner">
+    <span class="lock-emoji">🗺️</span>
+    <h1 class="lock-title">Carnet de Voyage</h1>
+    <p class="lock-subtitle">Paris — Mars 2025 · Lucas</p>
+    <p class="lock-error" id="lock-error"></p>
+    <input type="password" class="lock-input" id="lock-input" placeholder="mot de passe" autocomplete="off" onkeydown="if(event.key==='Enter') checkPassword()"/>
+    <button class="lock-btn" onclick="checkPassword()">Entrer ✦</button>
+    <p class="lock-hint">Mot de passe : paris2025</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <div class="header">
+    <div class="header-title">✦ Carnet <span>Paris</span></div>
+    <div class="header-right" id="day-filters">
+      <span class="day-badge active" onclick="filterDay('all', this)">Tous</span>
+      <span class="day-badge" onclick="filterDay('1', this)">Lun 9</span>
+      <span class="day-badge" onclick="filterDay('2', this)">Mar 10</span>
+      <span class="day-badge" onclick="filterDay('3', this)">Mer 11</span>
+      <span class="day-badge" onclick="filterDay('4', this)">Jeu 12</span>
+      <span class="day-badge" onclick="filterDay('5', this)">Ven 13</span>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="count-badge"><strong id="visible-count">10</strong> lieux visités</div>
+
+  <div class="map-legend">
+    <div class="legend-title">Jours</div>
+    <div class="legend-item" onclick="filterDay('1', document.querySelectorAll('.day-badge')[1])"><div class="legend-dot" style="background:#ff6b6b"></div>Lundi 9 — Mémoire</div>
+    <div class="legend-item" onclick="filterDay('2', document.querySelectorAll('.day-badge')[2])"><div class="legend-dot" style="background:#ffd93d"></div>Mardi 10 — Art</div>
+    <div class="legend-item" onclick="filterDay('3', document.querySelectorAll('.day-badge')[3])"><div class="legend-dot" style="background:#6bcb77"></div>Mercredi 11 — Institutions</div>
+    <div class="legend-item" onclick="filterDay('4', document.querySelectorAll('.day-badge')[4])"><div class="legend-dot" style="background:#4d96ff"></div>Jeudi 12 — Culture</div>
+    <div class="legend-item" onclick="filterDay('5', document.querySelectorAll('.day-badge')[5])"><div class="legend-dot" style="background:#c77dff"></div>Vendredi 13 — Marine</div>
+  </div>
+
+  <div id="panel">
+    <div class="panel-header">
+      <div class="panel-day" id="panel-day"></div>
+      <div class="panel-title" id="panel-title"></div>
+      <div class="panel-subtitle" id="panel-subtitle"></div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-text" id="panel-text"></div>
+      <div class="panel-quote" id="panel-quote"></div>
+      <div class="photos-header">
+        <span class="photos-label">📷 Mes photos</span>
+      </div>
+      <div class="photos-grid" id="photos-grid"></div>
+    </div>
+  </div>
+
+  <div id="lightbox" onclick="closeLightbox()">
+    <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const PASSWORD = 'paris2025';
+const dayColors = { 1:'#ff6b6b', 2:'#ffd93d', 3:'#6bcb77', 4:'#4d96ff', 5:'#c77dff' };
+const dayNames  = { 1:'Lundi 9 mars', 2:'Mardi 10 mars', 3:'Mercredi 11 mars', 4:'Jeudi 12 mars', 5:'Vendredi 13 mars' };
+
+const locations = [
+  { id: 'mont-valerien', day: 1, name: 'Mont Valérien', icon: '🕯️', lat: 48.8677, lng: 2.2127, subtitle: 'Suresnes · Mémoire nationale', images: ['10.jpg', '100.jpg'], text: '<p>Haut lieu de la résistance...</p>', quote: 'Des mots gravés pour l\'éternité.' },
+
+  { id: 'drancy', day: 2, name: 'Mémorial de la Shoah', icon: '✡️', lat: 48.9197, lng: 2.4561, subtitle: 'Drancy · Camp de transit', images: ['media.jpg'], text: '<p>Une page sombre de l\'histoire...</p>', quote: 'Ne jamais oublier.' },
+
+  { id: 'orsay', day: 2, name: 'Musée d\'Orsay', icon: '🎨', lat: 48.8600, lng: 2.3266, subtitle: 'Ancienne gare · Impressionnisme', images: ['media-1.jpg', 'shared-image-0.jpg', 'shared-image-1.jpg', 'shared-image-2.jpg', 'shared-image-3.jpg'], text: '<p>Le temple de l\'art du XIXe siècle...</p>', quote: 'La lumière de Monet.' },
+
+  { id: 'seine', day: 2, name: 'Balade sur la Seine', icon: '🌊', lat: 48.8566, lng: 2.3522, subtitle: 'Rive gauche · Cœur de Paris', images: ['shared-image-4.jpg', 'shared-image-5.jpg', 'shared-image-6.jpg', 'shared-image-7.jpg', 'shared-image-8.jpg'], text: '<p>Le miroir de la ville...</p>', quote: 'Paris est un fleuve.' },
+
+  { id: 'senat', day: 3, name: 'Sénat', icon: '🏛️', lat: 48.8462, lng: 2.3372, subtitle: 'Palais du Luxembourg', images: ['shared-image-9.jpg', 'shared-image-10.jpg', 'shared-image-11.jpg', 'shared-image-12.jpg', 'shared-image-13.jpg', 'shared-image-14.jpg', 'shared-image-15.jpg'], text: '<p>Le cœur de la République...</p>', quote: 'L\'histoire en marche.' },
+
+  { id: 'invalides', day: 3, name: 'Musée de l\'Armée', icon: '⚔️', lat: 48.8553, lng: 2.3120, subtitle: 'Invalides · Napoléon', images: ['shared-image-16.jpg', 'shared-image-17.jpg', 'shared-image-18.jpg', 'shared-image-19.jpg', 'shared-image-20.jpg', 'shared-image-21.jpg', 'shared-image-22.jpg'], text: '<p>L\'histoire militaire française...</p>', quote: 'Sous le dôme doré.' },
+
+  { id: 'arc', day: 3, name: 'Arc de Triomphe', icon: '🔥', lat: 48.8738, lng: 2.2950, subtitle: 'Étoile · La Flamme', images: ['shared-image-23.jpg', 'shared-image-24.jpg', 'shared-image-25.jpg', 'shared-image-26.jpg', 'shared-image-27.jpg'], text: '<p>Le ravivage de la flamme...</p>', quote: 'Le souvenir vivant.' },
+
+  { id: 'pantheon', day: 4, name: 'Panthéon', icon: '⚖️', lat: 48.8462, lng: 2.3510, subtitle: 'Grands Hommes', images: ['shared-image-28.jpg', 'shared-image-29.jpg', 'shared-image-30.jpg', 'shared-image-31.jpg', 'shared-image-32.jpg', 'shared-image-33.jpg', 'shared-image-34.jpg', 'shared-image-35.jpg'], text: '<p>Aux grands hommes la patrie reconnaissante...</p>', quote: 'L\'esprit des Lumières.' },
+
+  { id: 'huchette', day: 4, name: 'Théâtre de la Huchette', icon: '🎭', lat: 48.8530, lng: 2.3469, subtitle: 'Ionesco · Absurde', images: ['Theatre_Huchette.jpg'], text: '<p>La Cantatrice Chauve depuis 1957...</p>', quote: 'L\'absurde est éternel.' },
+
+  { id: 'marine', day: 5, name: 'Musée de la Marine', icon: '⚓', lat: 48.8637, lng: 2.2948, subtitle: 'Trocadéro · Océans', images: ['shared-image-36.jpg', 'musee-marine.jpg'], text: '<p>La France et ses côtes...</p>', quote: 'L\'appel du large.' }
+];
+
+let map, markers = [];
+
+function checkPassword() {
+  const val = document.getElementById('lock-input').value;
+  const err = document.getElementById('lock-error');
+  const inp = document.getElementById('lock-input');
+  if (val === PASSWORD) {
+    const ls = document.getElementById('lock-screen');
+    ls.style.transition = 'opacity 0.4s';
+    ls.style.opacity = '0';
+    setTimeout(() => {
+      ls.style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      initMap();
+    }, 400);
+  } else {
+    err.textContent = 'Mot de passe incorrect.';
+    inp.classList.add('error');
+    setTimeout(() => { inp.classList.remove('error'); err.textContent = ''; }, 1000);
+  }
+}
+
+function initMap() {
+  if (map) return;
+  map = L.map('map', { center: [48.865, 2.33], zoom: 13, zoomControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  locations.forEach(loc => {
+    const color = dayColors[loc.day];
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="custom-marker" style="background:${color}; box-shadow:0 4px 20px ${color}66;">
+               <span class="marker-icon">${loc.icon}</span>
+             </div>`,
+      iconSize: [36, 36], iconAnchor: [18, 36]
+    });
+    const m = L.marker([loc.lat, loc.lng], { icon }).addTo(map);
+    m.on('click', () => openPanel(loc.id));
+    m._day = loc.day;
+    markers.push(m);
+  });
+}
+
+function openPanel(id) {
+  const loc = locations.find(l => l.id === id);
+  if (!loc) return;
+  const color = dayColors[loc.day];
+
+  document.getElementById('panel-day').textContent = `Jour ${loc.day} — ${dayNames[loc.day]}`;
+  document.getElementById('panel-day').style.color = color;
+  document.getElementById('panel-title').textContent = `${loc.icon} ${loc.name}`;
+  document.getElementById('panel-subtitle').textContent = loc.subtitle;
+  document.getElementById('panel-text').innerHTML = loc.text;
+
+  const quoteEl = document.getElementById('panel-quote');
+  quoteEl.textContent = loc.quote;
+  quoteEl.style.borderColor = color;
+  quoteEl.style.display = loc.quote ? 'block' : 'none';
+
+  const grid = document.getElementById('photos-grid');
+  grid.innerHTML = '';
+  (loc.images || []).forEach(src => {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
+    div.innerHTML = `<img src="${src}" loading="lazy" onclick="openLightbox('${src}')">`;
+    grid.appendChild(div);
+  });
+
+  document.getElementById('panel').classList.add('open');
+}
+
+function closePanel() { document.getElementById('panel').classList.remove('open'); }
+
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+function filterDay(day, btn) {
+  document.querySelectorAll('.day-badge').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  let count = 0;
+  markers.forEach(m => {
+    const show = day === 'all' || String(m._day) === String(day);
+    if (show) { if (!map.hasLayer(m)) m.addTo(map); count++; }
+    else { if (map.hasLayer(m)) map.removeLayer(m); }
+  });
+  document.getElementById('visible-count').textContent = count;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeLightbox(); closePanel(); }
+});
+</script>
+</body>
+</html>
