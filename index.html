@@ -326,6 +326,7 @@
     <p class="lock-error" id="lock-error"></p>
     <input type="password" class="lock-input" id="lock-input" placeholder="mot de passe" autocomplete="off" onkeydown="if(event.key==='Enter') checkPassword()"/>
     <button class="lock-btn" onclick="checkPassword()">Entrer ✦</button>
+    <!-- Supprime la ligne ci-dessous si tu ne veux pas afficher le mot de passe -->
     <p class="lock-hint">Mot de passe : paris2025</p>
   </div>
 </div>
@@ -389,25 +390,96 @@ const dayColors = { 1:'#ff6b6b', 2:'#ffd93d', 3:'#6bcb77', 4:'#4d96ff', 5:'#c77d
 const dayNames  = { 1:'Lundi 9 mars', 2:'Mardi 10 mars', 3:'Mercredi 11 mars', 4:'Jeudi 12 mars', 5:'Vendredi 13 mars' };
 
 const locations = [
-  { id: 'mont-valerien', day: 1, name: 'Mont Valérien', icon: '🕯️', lat: 48.8677, lng: 2.2127, subtitle: 'Suresnes · Mémoire nationale', images: ['10.jpg', '100.jpg'], text: '<p>Haut lieu de la résistance...</p>', quote: 'Des mots gravés pour l\'éternité.' },
-
-  { id: 'drancy', day: 2, name: 'Mémorial de la Shoah', icon: '✡️', lat: 48.9197, lng: 2.4561, subtitle: 'Drancy · Camp de transit', images: ['media.jpg'], text: '<p>Une page sombre de l\'histoire...</p>', quote: 'Ne jamais oublier.' },
-
-  { id: 'orsay', day: 2, name: 'Musée d\'Orsay', icon: '🎨', lat: 48.8600, lng: 2.3266, subtitle: 'Ancienne gare · Impressionnisme', images: ['media-1.jpg', 'shared-image-0.jpg', 'shared-image-1.jpg', 'shared-image-2.jpg', 'shared-image-3.jpg'], text: '<p>Le temple de l\'art du XIXe siècle...</p>', quote: 'La lumière de Monet.' },
-
-  { id: 'seine', day: 2, name: 'Balade sur la Seine', icon: '🌊', lat: 48.8566, lng: 2.3522, subtitle: 'Rive gauche · Cœur de Paris', images: ['shared-image-4.jpg', 'shared-image-5.jpg', 'shared-image-6.jpg', 'shared-image-7.jpg', 'shared-image-8.jpg'], text: '<p>Le miroir de la ville...</p>', quote: 'Paris est un fleuve.' },
-
-  { id: 'senat', day: 3, name: 'Sénat', icon: '🏛️', lat: 48.8462, lng: 2.3372, subtitle: 'Palais du Luxembourg', images: ['shared-image-9.jpg', 'shared-image-10.jpg', 'shared-image-11.jpg', 'shared-image-12.jpg', 'shared-image-13.jpg', 'shared-image-14.jpg', 'shared-image-15.jpg'], text: '<p>Le cœur de la République...</p>', quote: 'L\'histoire en marche.' },
-
-  { id: 'invalides', day: 3, name: 'Musée de l\'Armée', icon: '⚔️', lat: 48.8553, lng: 2.3120, subtitle: 'Invalides · Napoléon', images: ['shared-image-16.jpg', 'shared-image-17.jpg', 'shared-image-18.jpg', 'shared-image-19.jpg', 'shared-image-20.jpg', 'shared-image-21.jpg', 'shared-image-22.jpg'], text: '<p>L\'histoire militaire française...</p>', quote: 'Sous le dôme doré.' },
-
-  { id: 'arc', day: 3, name: 'Arc de Triomphe', icon: '🔥', lat: 48.8738, lng: 2.2950, subtitle: 'Étoile · La Flamme', images: ['shared-image-23.jpg', 'shared-image-24.jpg', 'shared-image-25.jpg', 'shared-image-26.jpg', 'shared-image-27.jpg'], text: '<p>Le ravivage de la flamme...</p>', quote: 'Le souvenir vivant.' },
-
-  { id: 'pantheon', day: 4, name: 'Panthéon', icon: '⚖️', lat: 48.8462, lng: 2.3510, subtitle: 'Grands Hommes', images: ['shared-image-28.jpg', 'shared-image-29.jpg', 'shared-image-30.jpg', 'shared-image-31.jpg', 'shared-image-32.jpg', 'shared-image-33.jpg', 'shared-image-34.jpg', 'shared-image-35.jpg'], text: '<p>Aux grands hommes la patrie reconnaissante...</p>', quote: 'L\'esprit des Lumières.' },
-
-  { id: 'huchette', day: 4, name: 'Théâtre de la Huchette', icon: '🎭', lat: 48.8530, lng: 2.3469, subtitle: 'Ionesco · Absurde', images: ['Theatre_Huchette.jpg'], text: '<p>La Cantatrice Chauve depuis 1957...</p>', quote: 'L\'absurde est éternel.' },
-
-  { id: 'marine', day: 5, name: 'Musée de la Marine', icon: '⚓', lat: 48.8637, lng: 2.2948, subtitle: 'Trocadéro · Océans', images: ['shared-image-36.jpg', 'musee-marine.jpg'], text: '<p>La France et ses côtes...</p>', quote: 'L\'appel du large.' }
+  {
+    id: 'mont-valerien', day: 1,
+    name: 'Mont Valérien', icon: '🕯️',
+    lat: 48.8677, lng: 2.2127,
+    subtitle: 'Suresnes · Mémoire nationale',
+    images: ['images/10.jpg', 'images/100.jpg'],
+    text: '<p>Haut lieu de la résistance...</p>',
+    quote: 'Des mots gravés pour l\'éternité.'
+  },
+  {
+    id: 'drancy', day: 2,
+    name: 'Mémorial de la Shoah', icon: '✡️',
+    lat: 48.9197, lng: 2.4561,
+    subtitle: 'Drancy · Camp de transit',
+    images: ['images/media.jpg'],
+    text: '<p>Une page sombre de l\'histoire...</p>',
+    quote: 'Ne jamais oublier.'
+  },
+  {
+    id: 'orsay', day: 2,
+    name: 'Musée d\'Orsay', icon: '🎨',
+    lat: 48.8600, lng: 2.3266,
+    subtitle: 'Ancienne gare · Impressionnisme',
+    images: ['images/media-1.jpg', 'images/shared-image-0.jpg', 'images/shared-image-1.jpg', 'images/shared-image-2.jpg', 'images/shared-image-3.jpg'],
+    text: '<p>Le temple de l\'art du XIXe siècle...</p>',
+    quote: 'La lumière de Monet.'
+  },
+  {
+    id: 'seine', day: 2,
+    name: 'Balade sur la Seine', icon: '🌊',
+    lat: 48.8566, lng: 2.3522,
+    subtitle: 'Rive gauche · Cœur de Paris',
+    images: ['images/shared-image-4.jpg', 'images/shared-image-5.jpg', 'images/shared-image-6.jpg', 'images/shared-image-7.jpg', 'images/shared-image-8.jpg'],
+    text: '<p>Le miroir de la ville...</p>',
+    quote: 'Paris est un fleuve.'
+  },
+  {
+    id: 'senat', day: 3,
+    name: 'Sénat', icon: '🏛️',
+    lat: 48.8462, lng: 2.3372,
+    subtitle: 'Palais du Luxembourg',
+    images: ['images/shared-image-9.jpg', 'images/shared-image-10.jpg', 'images/shared-image-11.jpg', 'images/shared-image-12.jpg', 'images/shared-image-13.jpg', 'images/shared-image-14.jpg', 'images/shared-image-15.jpg'],
+    text: '<p>Le cœur de la République...</p>',
+    quote: 'L\'histoire en marche.'
+  },
+  {
+    id: 'invalides', day: 3,
+    name: 'Musée de l\'Armée', icon: '⚔️',
+    lat: 48.8553, lng: 2.3120,
+    subtitle: 'Invalides · Napoléon',
+    images: ['images/shared-image-16.jpg', 'images/shared-image-17.jpg', 'images/shared-image-18.jpg', 'images/shared-image-19.jpg', 'images/shared-image-20.jpg', 'images/shared-image-21.jpg', 'images/shared-image-22.jpg'],
+    text: '<p>L\'histoire militaire française...</p>',
+    quote: 'Sous le dôme doré.'
+  },
+  {
+    id: 'arc', day: 3,
+    name: 'Arc de Triomphe', icon: '🔥',
+    lat: 48.8738, lng: 2.2950,
+    subtitle: 'Étoile · La Flamme',
+    images: ['images/shared-image-23.jpg', 'images/shared-image-24.jpg', 'images/shared-image-25.jpg', 'images/shared-image-26.jpg', 'images/shared-image-27.jpg'],
+    text: '<p>Le ravivage de la flamme...</p>',
+    quote: 'Le souvenir vivant.'
+  },
+  {
+    id: 'pantheon', day: 4,
+    name: 'Panthéon', icon: '⚖️',
+    lat: 48.8462, lng: 2.3510,
+    subtitle: 'Grands Hommes',
+    images: ['images/shared-image-28.jpg', 'images/shared-image-29.jpg', 'images/shared-image-30.jpg', 'images/shared-image-31.jpg', 'images/shared-image-32.jpg', 'images/shared-image-33.jpg', 'images/shared-image-34.jpg', 'images/shared-image-35.jpg'],
+    text: '<p>Aux grands hommes la patrie reconnaissante...</p>',
+    quote: 'L\'esprit des Lumières.'
+  },
+  {
+    id: 'huchette', day: 4,
+    name: 'Théâtre de la Huchette', icon: '🎭',
+    lat: 48.8530, lng: 2.3469,
+    subtitle: 'Ionesco · Absurde',
+    images: ['images/Theatre_Huchette.jpg'],
+    text: '<p>La Cantatrice Chauve depuis 1957...</p>',
+    quote: 'L\'absurde est éternel.'
+  },
+  {
+    id: 'marine', day: 5,
+    name: 'Musée de la Marine', icon: '⚓',
+    lat: 48.8637, lng: 2.2948,
+    subtitle: 'Trocadéro · Océans',
+    images: ['images/shared-image-36.jpg', 'images/musee-marine.jpg'],
+    text: '<p>La France et ses côtes...</p>',
+    quote: 'L\'appel du large.'
+  }
 ];
 
 let map, markers = [];
